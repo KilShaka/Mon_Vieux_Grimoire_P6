@@ -36,14 +36,11 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 
 async function connectToMongoDB() {
   try {
-    mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log("Connexion à MongoDB réussie !");
   } catch (error) {
     console.log("Connexion à MongoDB échouée :", error);
-    process.exit(1); // Si Echec de co = l'Appli s'arrête
+    process.exit(1); // Arrête l'application si la connexion échoue
   }
 }
 
@@ -52,10 +49,13 @@ async function startServer() {
     // Connexion a la BDD
     await connectToMongoDB();
 
-    // Routes (A FAIRE)
-    // app.use('/api/auth', authRoutes); // Futures routes pour l'authentification
-    // app.use('/api/books', bookRoutes); // Futures routes pour les livres
-
+    // ROUTES
+    // Routes pour l'authentification
+    const authRoutes = require("./routes/auth.routes");
+    app.use("/api/auth", authRoutes);
+    // Routes pour les livres
+    const bookRoutes = require("./routes/book.routes");
+    app.use("/api/books", bookRoutes);
     // Démarrage du serveur
     const port = process.env.PORT || 4000;
     app.listen(port, () => {
