@@ -38,11 +38,12 @@ exports.getBestRatedBooks = async (req, res) => {
 // CRÉER UN NOUVEAU LIVRE
 exports.createBook = async (req, res) => {
   try {
-    // CONVERTIT LES DONNÉES DU LIVRE DE STRING EN OBJET
+    // CONVERTIT LES DONNÉES DU LIVRE DE STRING (envoyé par le front via le formdata) EN OBJET
     const bookData = JSON.parse(req.body.book);
 
     // CRÉE UN NOUVEAU LIVRE
     const book = new Book({
+      // On fait un spreadOperator sur l'objet bookData pour y ajouter les propriétés userId et imageUrl
       ...bookData,
       userId: req.auth.userId,
       // CRÉE L'URL DE L'IMAGE
@@ -95,9 +96,11 @@ exports.deleteBook = async (req, res) => {
     }
 
     // SUPPRIME L'IMAGE DU LIVRE
+    // On extrait d'abord le nom du livre de l'URL
     const filename = book.imageUrl.split("/images/")[1];
+    //Unlink supprime le fichier du dossier images
     fs.unlink(`images/${filename}`, async () => {
-      // PUIS SUPPRIME LE LIVRE DE LA BASE
+      // PUIS SUPPRIME LE LIVRE DE LA BASE DE DONNEES
       await Book.deleteOne({ _id: req.params.id });
       res.status(200).json({ message: "Livre supprimé !" });
     });

@@ -35,4 +35,5 @@ module.exports = multer({
       callback(new Error("Type de fichier non supporté !"), false);
     }
   },
+  //On accepte un seul fichier à la fois qui doit être envoyé avec le champs "image" :
 }).single("image");
