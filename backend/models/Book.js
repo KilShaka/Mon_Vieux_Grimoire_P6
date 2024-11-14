@@ -48,8 +48,10 @@ const bookSchema = mongoose.Schema({
 // CALCUL DE LA NOTE MOYENNE
 bookSchema.methods.getAverageRating = function () {
   this.averageRating =
-    this.ratings.reduce((avg, rating) => avg + rating.grade, 0) /
-      this.ratings.length || 0;
+    Math.round(
+      (this.ratings.reduce((avg, rating) => avg + rating.grade, 0) /
+        this.ratings.length || 0) * 10
+    ) / 10;
 };
 
 module.exports = mongoose.model("Book", bookSchema);
