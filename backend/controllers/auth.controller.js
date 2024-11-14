@@ -6,7 +6,10 @@ const User = require("../models/User");
 exports.signup = async (req, res) => {
   try {
     // HASH DU MOT DE PASSE
-    const hash = await bcrypt.hash(req.body.password, 10);
+    const hash = await bcrypt.hash(
+      req.body.password,
+      parseInt(process.env.BCRYPT_SALT_ROUNDS)
+    );
 
     // CRÉATION DU NOUVEL UTILISATEUR
     const user = new User({
