@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path"); // Module Node.js pour gérer les chemins de fichiers
 require("dotenv").config();
+const limiter = require("./middleware/rate-limit");
 
 // Création de l'APP Express
 const app = express();
@@ -27,6 +28,10 @@ app.use((req, res, next) => {
   );
   next();
 });
+
+// Rate Limiting
+app.use(limiter.globalLimit);
+app.use("/api/auth", limiter.authLimit);
 
 // Configuration du dossier statique pour les images
 app.use("/images", express.static(path.join(__dirname, "images")));

@@ -62,26 +62,45 @@ exports.createBook = async (req, res) => {
 // MODIFIER UN LIVRE EXISTANT
 exports.modifyBook = async (req, res) => {
   try {
-    const book = await Book.findOne({ _id: req.params.id });
-
-    // VÉRIFIE SI LE LIVRE EXISTE
-    if (!book) {
-      return res.status(404).json({ message: "Livre non trouvé" });
+    if (req.file) {
+      // ON RECUPERE L'URL DE L'IMAGE POUR LA SUPPRIMER DU DOSSIER IMAGES
+      const oldBook = await Book.findById(req.params.id).select("imageUrl");
+      if (oldBook) {
+        const oldFilename = oldBook.imageUrl.split("/images/")[1];
+        try {
+          fs.unlinkSync(`images/${oldFilename}`);
+        } catch (err) {
+          console.error(`Erreur suppression image ${oldFilename}:`, err);
+        }
+      }
     }
 
-    // VÉRIFIE SI L'UTILISATEUR EST LE PROPRIÉTAIRE
-    if (book.userId !== req.auth.userId) {
-      return res.status(403).json({ message: "Non autorisé" });
-    }
+    // Prépare les données de mise à jour
+    const bookData = req.file
+      ? {
+          ...JSON.parse(req.body.book),
+          imageUrl: `${req.protocol}://${req.get("host")}/images/${
+            req.file.filename
+          }`,
+        }
+      : { ...req.body };
 
-    // MET À JOUR LE LIVRE
-    await Book.updateOne(
-      { _id: req.params.id },
-      { ...req.body, _id: req.params.id }
+    // Mise à jour avec vérification du propriétaire
+    const updatedBook = await Book.findOneAndUpdate(
+      { _id: req.params.id, userId: req.auth.userId },
+      bookData,
+      { new: true }
     );
-    res.status(200).json({ message: "Livre modifié !" });
+
+    if (!updatedBook) {
+      return res
+        .status(403)
+        .json({ message: "Non autorisé ou livre non trouvé" });
+    }
+
+    res.status(200).json(updatedBook);
   } catch (error) {
-    res.status(400).json({ error });
+    res.status(400).json({ error: error.message });
   }
 };
 
