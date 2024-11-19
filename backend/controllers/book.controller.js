@@ -107,20 +107,22 @@ exports.modifyBook = async (req, res) => {
 // SUPPRIMER UN LIVRE
 exports.deleteBook = async (req, res) => {
   try {
-    const book = await Book.findOne({ _id: req.params.id });
+    const book = await Book.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.auth.userId,
+    });
 
-    // VÉRIFIE SI L'UTILISATEUR EST LE PROPRIÉTAIRE
-    if (book.userId !== req.auth.userId) {
-      return res.status(403).json({ message: "Non autorisé" });
+    if (!book) {
+      return res
+        .status(403)
+        .json({ message: "Non autorisé ou livre non trouvé" });
     }
 
-    // SUPPRIME L'IMAGE DU LIVRE
-    // On extrait d'abord le nom du livre de l'URL
     const filename = book.imageUrl.split("/images/")[1];
-    //Unlink supprime le fichier du dossier images
-    fs.unlink(`images/${filename}`, async () => {
-      // PUIS SUPPRIME LE LIVRE DE LA BASE DE DONNEES
-      await Book.deleteOne({ _id: req.params.id });
+    fs.unlink(`images/${filename}`, (err) => {
+      if (err) {
+        console.error("Erreur lors de la suppression de l'image:", err);
+      }
       res.status(200).json({ message: "Livre supprimé !" });
     });
   } catch (error) {
@@ -131,6 +133,15 @@ exports.deleteBook = async (req, res) => {
 // NOTER UN LIVRE
 exports.rateBook = async (req, res) => {
   try {
+    const rating = parseInt(req.body.rating);
+
+    // Si la note n'est pas un entier entre 1 et 5 on renvoie une erreur
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return res
+        .status(400)
+        .json({ message: "La note doit être un nombre entier entre 1 et 5" });
+    }
+
     const book = await Book.findOne({ _id: req.params.id });
 
     // VÉRIFIE SI L'UTILISATEUR N'A PAS DÉJÀ NOTÉ LE LIVRE
